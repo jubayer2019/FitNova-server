@@ -111,6 +111,48 @@ app.get("/api/fix-jwks", async (req, res) => {
   }
 });
 
+// Temporary fix for initial classes DB sync
+app.get("/api/fix-initial-classes", async (req, res) => {
+  try {
+    const mongoose = (await import("mongoose")).default;
+    const db = mongoose.connection.db;
+    
+    // Find admin
+    const admin = await db.collection('users').findOne({ role: 'admin' });
+    if (!admin) return res.status(404).json({ success: false, message: "No admin found" });
+
+    // Update classes
+    const classes = await db.collection('classes').find({}).toArray();
+    for (const cls of classes) {
+      let updates = {
+        trainerId: admin._id.toString(),
+        trainerName: admin.name,
+        trainerEmail: admin.email
+      };
+      if (cls.title && !cls.className) updates.className = cls.title;
+      await db.collection('classes').updateOne({ _id: cls._id }, { $set: updates });
+    }
+
+    // Update bookings
+    const bookings = await db.collection('bookings').find({}).toArray();
+    for (const b of bookings) {
+      let bUpdates = {
+        trainerId: admin._id.toString(),
+        trainerName: admin.name
+      };
+      if (b.className === "Unknown Class" || !b.className) {
+        const cls = classes.find(c => c._id.toString() === b.classId.toString());
+        if (cls) bUpdates.className = cls.className || cls.title || "Unknown Class";
+      }
+      await db.collection('bookings').updateOne({ _id: b._id }, { $set: bUpdates });
+    }
+
+    res.json({ success: true, message: "Fixed initial classes and bookings successfully!" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Unknown routes
 app.use((req, res, next) => {
   res.status(404).json({

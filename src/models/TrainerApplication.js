@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const trainerApplicationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: { type: String, ref: "User", required: true },
   name: { type: String, required: true },
   email: { type: String, required: true },
   experience: { type: Number, required: true }, // in years

@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import "dotenv/config";
 import connectDB from "../config/db.js";
+import { auth } from "../config/auth.js";
+import { fromNodeHeaders } from "better-auth/node";
 
 import { User } from "../models/User.js";
 import { Class } from "../models/Class.js";
@@ -13,42 +15,55 @@ const seedDatabase = async () => {
 
     // Clear existing data
     await User.deleteMany({});
+    await mongoose.connection.db.collection('session').deleteMany({});
+    await mongoose.connection.db.collection('account').deleteMany({});
     await Class.deleteMany({});
     await ForumPost.deleteMany({});
 
     console.log("Cleared existing database...");
 
-    const salt = await bcrypt.genSalt(10);
-    const password = await bcrypt.hash("Password123!", salt);
+    // Since we are running in a script, we provide dummy headers
+    const reqHeaders = new Headers();
 
-    // 1. Create Users
-    const admin = await User.create({
-      name: "Admin FitNova",
-      email: "admin@fitnova.com",
-      password,
-      role: "admin",
-      status: "active",
-      image: "https://ui-avatars.com/api/?name=Admin+FitNova"
+    const adminResponse = await auth.api.signUpEmail({
+      headers: reqHeaders,
+      body: {
+        name: "Admin FitNova",
+        email: "admin@fitnova.com",
+        password: "Password123!",
+        role: "admin",
+        status: "active",
+        image: "https://ui-avatars.com/api/?name=Admin+FitNova"
+      }
     });
+    const admin = adminResponse.user;
 
-    const trainer1 = await User.create({
-      name: "John Trainer",
-      email: "john@trainer.com",
-      password,
-      role: "trainer",
-      status: "active",
-      trainerApplicationStatus: "approved",
-      image: "https://ui-avatars.com/api/?name=John+Trainer"
+    const trainerResponse = await auth.api.signUpEmail({
+      headers: reqHeaders,
+      body: {
+        name: "John Trainer",
+        email: "john@trainer.com",
+        password: "Password123!",
+        role: "trainer",
+        status: "active",
+        trainerApplicationStatus: "approved",
+        image: "https://ui-avatars.com/api/?name=John+Trainer"
+      }
     });
+    const trainer1 = trainerResponse.user;
 
-    const user1 = await User.create({
-      name: "Jane User",
-      email: "jane@user.com",
-      password,
-      role: "user",
-      status: "active",
-      image: "https://ui-avatars.com/api/?name=Jane+User"
+    const userResponse = await auth.api.signUpEmail({
+      headers: reqHeaders,
+      body: {
+        name: "Jane User",
+        email: "jane@user.com",
+        password: "Password123!",
+        role: "user",
+        status: "active",
+        image: "https://ui-avatars.com/api/?name=Jane+User"
+      }
     });
+    const user1 = userResponse.user;
 
     console.log("Users seeded.");
 
@@ -62,7 +77,7 @@ const seedDatabase = async () => {
       schedule: "Mon, Wed, Fri at 6:00 PM",
       price: 25.00,
       description: "Push your limits with this intense full-body cardiovascular workout designed to burn fat and build endurance.",
-      trainerId: trainer1._id,
+      trainerId: trainer1.id,
       trainerName: trainer1.name,
       trainerEmail: trainer1.email,
       status: "approved",
@@ -78,7 +93,7 @@ const seedDatabase = async () => {
       schedule: "Tue, Thu at 7:00 AM",
       price: 15.00,
       description: "A gentle introduction to yoga focusing on basic postures, breath control, and relaxation.",
-      trainerId: trainer1._id,
+      trainerId: trainer1.id,
       trainerName: trainer1.name,
       trainerEmail: trainer1.email,
       status: "pending"
@@ -92,7 +107,7 @@ const seedDatabase = async () => {
       image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1470&auto=format&fit=crop",
       description: "We are excited to launch FitNova! Connect with trainers, share your progress, and get the most out of your fitness journey.",
       excerpt: "We are excited to launch FitNova! Connect with trainers...",
-      authorId: admin._id,
+      authorId: admin.id,
       authorName: admin.name,
       authorEmail: admin.email,
       authorRole: admin.role,
@@ -104,7 +119,7 @@ const seedDatabase = async () => {
       image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1453&auto=format&fit=crop",
       description: "Building muscle requires more than just lifting weights. You need to focus on your protein intake, caloric surplus, and rest. Aim for 1.6g of protein per kg of body weight.",
       excerpt: "Building muscle requires more than just lifting weights. You need to focus on your protein intake...",
-      authorId: trainer1._id,
+      authorId: trainer1.id,
       authorName: trainer1.name,
       authorEmail: trainer1.email,
       authorRole: trainer1.role,

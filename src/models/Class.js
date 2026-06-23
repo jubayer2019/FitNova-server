@@ -9,7 +9,7 @@ const classSchema = new mongoose.Schema({
   schedule: { type: String, required: true },
   price: { type: Number, required: true },
   description: { type: String, required: true },
-  trainerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  trainerId: { type: String, ref: "User", required: true },
   trainerName: { type: String, required: true },
   trainerEmail: { type: String, required: true },
   status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },

@@ -10,7 +10,6 @@ import "dotenv/config";
 import connectDB from "./config/db.js";
 import errorHandler from "./middlewares/error.middleware.js";
 
-import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import classRoutes from "./routes/class.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
@@ -20,6 +19,9 @@ import forumRoutes from "./routes/forum.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import trainerRoutes from "./routes/trainer.routes.js";
+
+import { auth } from "./config/auth.js";
+import { toNodeHandler } from "better-auth/node";
 
 // Initialize express app
 const app = express();
@@ -82,7 +84,7 @@ app.get("/", (req, res) => {
 });
 
 // API Routes
-app.use("/api/auth", authRoutes);
+app.all("/api/auth/*", toNodeHandler(auth));
 app.use("/api/users", userRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/bookings", bookingRoutes);

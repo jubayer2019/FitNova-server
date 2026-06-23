@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const favoriteSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: { type: String, ref: "User", required: true },
   userEmail: { type: String, required: true },
   classId: { type: mongoose.Schema.Types.ObjectId, ref: "Class", required: true },
 }, { timestamps: true });

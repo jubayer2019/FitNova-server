@@ -5,14 +5,14 @@ const forumPostSchema = new mongoose.Schema({
   image: { type: String },
   description: { type: String, required: true }, // The main content
   excerpt: { type: String }, // Short snippet
-  authorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  authorId: { type: String, ref: "User", required: true },
   authorName: { type: String, required: true },
   authorEmail: { type: String, required: true },
   authorRole: { type: String, required: true },
   likes: { type: Number, default: 0 },
   dislikes: { type: Number, default: 0 },
-  likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-  dislikedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  likedBy: [{ type: String, ref: "User" }],
+  dislikedBy: [{ type: String, ref: "User" }],
   category: { type: String, default: "General" }
 }, { timestamps: true });
 

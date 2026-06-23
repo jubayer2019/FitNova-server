@@ -1,26 +1,23 @@
-import jwt from "jsonwebtoken";
-import { User } from "../models/User.js";
+import { auth } from "../config/auth.js";
+import { fromNodeHeaders } from "better-auth/node";
 
 export const verifyUser = async (req, res, next) => {
   try {
-    const cookieName = process.env.COOKIE_NAME || "fitnova_token";
-    const token = req.cookies[cookieName] || req.headers.authorization?.split(" ")[1];
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers)
+    });
 
-    if (!token) {
+    if (!session || !session.user) {
       return res.status(401).json({ success: false, message: "Not authenticated" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "super_secret_jwt_key");
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: "User not found" });
-    }
-
-    req.user = user;
+    // Pass the user to the next middleware (ensure we attach MongoDB _id style id for compatibility)
+    req.user = session.user;
+    req.user._id = session.user.id; 
+    
     next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: "Invalid or expired token" });
+    return res.status(401).json({ success: false, message: "Invalid or expired session" });
   }
 };
 

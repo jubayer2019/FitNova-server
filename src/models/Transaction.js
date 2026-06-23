@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const transactionSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: { type: String, ref: "User", required: true },
   userEmail: { type: String, required: true },
   classId: { type: mongoose.Schema.Types.ObjectId, ref: "Class", required: true },
   className: { type: String, required: true },

@@ -1,11 +1,31 @@
 import { betterAuth } from "better-auth";
 import { jwt } from "better-auth/plugins";
+import { mongodbAdapter } from "@better-auth/mongo-adapter";
+import { MongoClient } from "mongodb";
+import "dotenv/config";
+
+const client = new MongoClient(process.env.MONGODB_URI || "mongodb://localhost:27017/fitnova");
 
 export const auth = betterAuth({
+  database: mongodbAdapter(client.db()),
   secret: process.env.BETTER_AUTH_SECRET || "fallback_secret_for_local_dev",
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
   emailAndPassword: {
     enabled: true,
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || "dummy",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "dummy",
+    }
+  },
+  user: {
+    additionalFields: {
+      role: { type: "string", defaultValue: "user" },
+      status: { type: "string", defaultValue: "active" },
+      trainerApplicationStatus: { type: "string", defaultValue: "none" },
+      trainerFeedback: { type: "string", required: false }
+    }
   },
   session: {
     cookieCache: {
@@ -28,11 +48,5 @@ export const auth = betterAuth({
       secure: process.env.NODE_ENV === "production",
       sameSite: "none", // To support cross-domain frontend/backend
     }
-  },
-  // Since we are primarily using a separate Express architecture, we might use
-  // a custom database adapter, but wait, Better Auth requires a DB adapter to store users.
-  // It has a Mongoose plugin/adapter! But the MongoDB adapter requires `@better-auth/mongodb` or we can just use our Mongoose models directly for other things.
-  // Wait, Better Auth requires storing User and Session in the DB. We should use the mongodb or mongoose adapter if possible, or just manage users manually via standard JWT if Better Auth is too complex to integrate without its adapters.
-  // However, the requirement says: "Use Better Auth compatible backend flow." and "Use Better Auth for authentication."
-  // I will use `mongodb` adapter, but we need to install `mongodb` package maybe? Or I can just pass `mongoose.connection.db`.
+  }
 });

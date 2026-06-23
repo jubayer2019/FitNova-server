@@ -3,7 +3,7 @@ import { Class } from "../models/Class.js";
 import { Booking } from "../models/Booking.js";
 import { Transaction } from "../models/Transaction.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_dummy_key_for_build");
 
 // POST /api/payments/create-payment-intent
 export const createPaymentIntent = async (req, res, next) => {

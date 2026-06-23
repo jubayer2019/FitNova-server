@@ -4,6 +4,7 @@ import { Transaction } from "../models/Transaction.js";
 import { Booking } from "../models/Booking.js";
 import { ForumPost } from "../models/ForumPost.js";
 import { TrainerApplication } from "../models/TrainerApplication.js";
+import mongoose from "mongoose";
 
 // GET /api/admin/overview
 export const getOverview = async (req, res, next) => {
@@ -61,7 +62,11 @@ export const updateRole = async (req, res, next) => {
     if (!["admin", "trainer", "user"].includes(role)) {
       return res.status(400).json({ success: false, message: "Invalid role provided" });
     }
-    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+    let user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true });
+    if (!user && mongoose.Types.ObjectId.isValid(req.params.id)) {
+      user = await User.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(req.params.id) }, { role }, { new: true });
+    }
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
     res.status(200).json({ success: true, message: `User role updated to ${role}`, data: user });
   } catch (error) {
     next(error);
@@ -174,7 +179,10 @@ export const approveTrainerApplication = async (req, res, next) => {
     const app = await TrainerApplication.findByIdAndUpdate(req.params.id, { status: "approved" }, { new: true });
     if (!app) return res.status(404).json({ success: false, message: "Application not found" });
 
-    await User.findByIdAndUpdate(app.userId, { role: "trainer", trainerApplicationStatus: "approved" });
+    let user = await User.findByIdAndUpdate(app.userId, { role: "trainer", trainerApplicationStatus: "approved" });
+    if (!user && mongoose.Types.ObjectId.isValid(app.userId)) {
+      user = await User.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(app.userId) }, { role: "trainer", trainerApplicationStatus: "approved" });
+    }
     res.status(200).json({ success: true, message: "Trainer application approved" });
   } catch (error) {
     next(error);
@@ -188,7 +196,10 @@ export const rejectTrainerApplication = async (req, res, next) => {
     const app = await TrainerApplication.findByIdAndUpdate(req.params.id, { status: "rejected", feedback }, { new: true });
     if (!app) return res.status(404).json({ success: false, message: "Application not found" });
 
-    await User.findByIdAndUpdate(app.userId, { trainerApplicationStatus: "rejected", trainerFeedback: feedback });
+    let user = await User.findByIdAndUpdate(app.userId, { trainerApplicationStatus: "rejected", trainerFeedback: feedback });
+    if (!user && mongoose.Types.ObjectId.isValid(app.userId)) {
+      user = await User.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(app.userId) }, { trainerApplicationStatus: "rejected", trainerFeedback: feedback });
+    }
     res.status(200).json({ success: true, message: "Trainer application rejected" });
   } catch (error) {
     next(error);

@@ -58,19 +58,35 @@ export const getTrainerBookings = async (req, res, next) => {
       .populate("classId", "className image price")
       .lean();
 
-    // Manually fetch and stitch users to ensure profile pictures are attached
-    const { User } = await import("../models/User.js");
+    // Fetch users using raw MongoDB driver to bypass any Mongoose _id casting issues 
+    // (Better Auth might use ObjectId in DB despite String in schema, or vice versa)
+    const mongoose = (await import("mongoose")).default;
+    const db = mongoose.connection.db;
+    
     const userIds = bookings.map(b => b.userId);
-    const users = await User.find({ _id: { $in: userIds } }).select("name email image").lean();
+    const objectIds = userIds.filter(id => mongoose.isValidObjectId(id)).map(id => new mongoose.Types.ObjectId(id));
+    
+    // Search for both String IDs and Object IDs
+    const users = await db.collection("user").find({
+      $or: [
+        { _id: { $in: userIds } },
+        { _id: { $in: objectIds } },
+        { id: { $in: userIds } }
+      ]
+    }).project({ name: 1, email: 1, image: 1 }).toArray();
     
     const userMap = {};
     users.forEach(u => {
       userMap[String(u._id)] = u;
+      if (u.id) userMap[String(u.id)] = u;
     });
 
     bookings.forEach(b => {
-      if (userMap[String(b.userId)]) {
-        b.userId = userMap[String(b.userId)];
+      const u = userMap[String(b.userId)];
+      if (u) {
+        // Normalize _id for the frontend
+        u._id = String(u._id);
+        b.userId = u;
       }
     });
 

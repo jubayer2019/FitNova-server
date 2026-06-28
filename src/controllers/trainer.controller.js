@@ -54,9 +54,9 @@ export const getMyPosts = async (req, res, next) => {
 // GET /api/trainer/my-bookings
 export const getTrainerBookings = async (req, res, next) => {
   try {
-    const trainerClasses = await Class.find({ trainerId: req.user._id }).select("_id");
-    const classIds = trainerClasses.map(c => c._id);
-    const bookings = await Booking.find({ classId: { $in: classIds } }).populate("userId", "name email image").populate("classId", "className image price");
+    const bookings = await Booking.find({ trainerId: req.user._id })
+      .populate("userId", "name email image")
+      .populate("classId", "className image price");
     res.status(200).json({ success: true, data: bookings });
   } catch (error) {
     next(error);
